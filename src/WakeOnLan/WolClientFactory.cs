@@ -10,11 +10,9 @@ public sealed class WolClientFactory : IWolClientFactory
     private DateTimeOffset? _refreshAt;
     private WolClient? _wolClient;
 
-    public WolClientFactory(ISystemClock systemClock, WolClientOptions? options = default)
+    public WolClientFactory(ISystemClock? systemClock = null, WolClientOptions? options = default)
     {
-        ArgumentNullException.ThrowIfNull(systemClock);
-
-        _systemClock = systemClock;
+        _systemClock = systemClock ?? new SystemClock();
         _options = options ?? WolClientOptions.Default;
     }
 
