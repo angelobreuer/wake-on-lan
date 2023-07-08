@@ -45,6 +45,10 @@ internal sealed class WolctlCommand : RootCommand, ICommandHandler
         aliases: new[] { "--use-single-interface", "-s" },
         description: "Use a single network interface to send the magic packet.");
 
+    private static readonly Option<bool> _preferBroadcast = new(
+        aliases: new[] { "--prefer-broadcast", "-b" },
+        description: "Prefers broadcasting the packet instead of using multicast.");
+
     public WolctlCommand() : base("Wake-on-LAN client")
     {
         AddArgument(_addressArgument);
@@ -56,6 +60,7 @@ internal sealed class WolctlCommand : RootCommand, ICommandHandler
         AddOption(_ipv4OnlyOption);
         AddOption(_ipv6OnlyOption);
         AddOption(_useSingleInterfaceOption);
+        AddOption(_preferBroadcast);
 
         Handler = this;
     }
@@ -79,6 +84,7 @@ internal sealed class WolctlCommand : RootCommand, ICommandHandler
         var ipv6Only = context.ParseResult.GetValueForOption(_ipv6OnlyOption);
         var verbose = context.ParseResult.GetValueForOption(_verboseOption);
         var useSingleInterface = context.ParseResult.GetValueForOption(_useSingleInterfaceOption);
+        var preferBroadcast = context.ParseResult.GetValueForOption(_preferBroadcast);
 
         var logLevel = verbose ? LogLevel.Debug : LogLevel.Error;
         using var loggerFactory = LoggerFactory.Create(x => x.AddConsole().SetMinimumLevel(logLevel));
@@ -119,7 +125,12 @@ internal sealed class WolctlCommand : RootCommand, ICommandHandler
             logger.LogInformation("Resolved address {IpAddress} to {WolAddress}.", ipAddress, wolAddress);
         }
 
-        var wolClientOptions = new WolClientOptions(addressFamily.Value, port, useSingleInterface);
+        var wolClientOptions = new WolClientOptions(
+            AddressFamily: addressFamily.Value,
+            Port: port,
+            UseSingleInterface: useSingleInterface,
+            PreferBroadcast: preferBroadcast);
+
         var wolClient = new WolClient(wolClientOptions);
 
         if (wolClient.WolInterfaces.IsEmpty)
